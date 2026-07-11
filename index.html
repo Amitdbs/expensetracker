@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Ledger — Expense Entry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F1E6;
+    --paper:#FFFCF6;
+    --ink:#3E4A37;
+    --ink-soft:#5B6653;
+    --sage:#7C9473;
+    --sage-dark:#586F50;
+    --sage-pale:#E6ECE1;
+    --mustard:#C79A3D;
+    --mustard-pale:#F3E6C4;
+    --line:#DEDACB;
+    --muted:#9B9784;
+    --danger:#B95F4F;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 1px 1px, rgba(62,74,55,0.07) 1px, transparent 0) 0 0/22px 22px,
+      var(--cream);
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:56px 20px 80px;
+  }
+
+  .page{
+    width:100%;
+    max-width:460px;
+  }
+
+  /* ---------- Header / Tally ---------- */
+  .tally{
+    background:var(--ink);
+    color:var(--cream);
+    border-radius:20px 20px 4px 4px;
+    padding:26px 28px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .tally::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:0;
+    border-bottom:2px dashed rgba(245,241,230,0.25);
+  }
+  .tally-greeting{
+    font-size:13px;
+    letter-spacing:0.04em;
+    color:rgba(245,241,230,0.65);
+    margin:0 0 2px;
+    font-weight:500;
+  }
+  .tally-date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:rgba(245,241,230,0.5);
+    margin:0 0 18px;
+  }
+  .tally-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--mustard);
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .tally-amount{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:500;
+    font-size:44px;
+    line-height:1;
+    display:flex;
+    align-items:baseline;
+    gap:4px;
+  }
+  .tally-amount .rs{ font-size:26px; opacity:0.7; }
+  .tally-count{
+    margin-top:10px;
+    font-size:12px;
+    color:rgba(245,241,230,0.55);
+  }
+  .tally-count b{ color:var(--cream); font-weight:600; }
+
+  /* perforation notch circles */
+  .notch{
+    position:absolute;
+    bottom:-9px;
+    width:18px; height:18px;
+    background:var(--cream);
+    border-radius:50%;
+  }
+  .notch.left{ left:-9px; }
+  .notch.right{ right:-9px; }
+
+  /* ---------- Card / Form ---------- */
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-top:none;
+    border-radius:4px 4px 20px 20px;
+    padding:28px 28px 30px;
+    box-shadow:0 18px 40px -22px rgba(62,74,55,0.35);
+  }
+
+  .field{ margin-bottom:20px; }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:9px;
+  }
+
+  /* category dropdown */
+  .cat-dropdown{
+    position:relative;
+  }
+  .cat-trigger{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, border-radius .15s ease;
+  }
+  .cat-trigger:hover{ border-color:var(--sage); }
+  .cat-trigger.open{
+    border-color:var(--sage);
+    box-shadow:0 0 0 3px var(--sage-pale);
+    border-radius:12px 12px 0 0;
+  }
+  .cat-trigger-left{
+    display:flex;
+    align-items:center;
+    gap:11px;
+  }
+  .cat-trigger-left .ic{
+    width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--sage-pale);
+    border-radius:50%;
+    font-size:16px;
+    flex-shrink:0;
+  }
+  .cat-trigger-left .name{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .cat-chevron{
+    color:var(--muted);
+    transition:transform .18s ease;
+    flex-shrink:0;
+    margin-right:2px;
+  }
+  .cat-trigger.open .cat-chevron{ transform:rotate(180deg); }
+
+  .cat-panel{
+    position:absolute;
+    top:calc(100% + 6px); left:0; right:0;
+    z-index:20;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:0 20px 44px -18px rgba(62,74,55,0.4);
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .2s ease, opacity .15s ease;
+  }
+  .cat-panel.open{
+    max-height:300px;
+    opacity:1;
+    overflow-y:auto;
+  }
+  .cat-search-wrap{
+    padding:10px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0;
+    background:var(--paper);
+    z-index:2;
+  }
+  .cat-search-wrap input{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--cream);
+    border-radius:9px;
+    padding:8px 10px;
+    font-size:13px;
+    font-family:'Inter', sans-serif;
+    outline:none;
+    color:var(--ink);
+  }
+  .cat-search-wrap input:focus{ border-color:var(--sage); }
+
+  .cat-option-wrap{
+    display:flex;
+    align-items:center;
+    padding:2px 8px;
+  }
+  .cat-option{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:9px 8px;
+    border-radius:9px;
+    cursor:pointer;
+    font-size:14px;
+    color:var(--ink-soft);
+    transition:background .12s ease;
+    flex:1;
+    min-width:0;
+  }
+  .cat-option:hover{ background:var(--sage-pale); }
+  .cat-option.selected{
+    background:var(--sage-pale);
+    color:var(--ink);
+    font-weight:600;
+  }
+  .cat-option .ic{
+    width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--cream);
+    border-radius:50%;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .cat-option .oname{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .cat-option .check{
+    margin-left:auto;
+    color:var(--sage-dark);
+    font-size:13px;
+    opacity:0;
+    flex-shrink:0;
+  }
+  .cat-option.selected .check{ opacity:1; }
+  .cat-del-btn{
+    width:28px; height:28px;
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent;
+    border:none;
+    border-radius:50%;
+    color:var(--muted);
+    cursor:pointer;
+    opacity:0;
+    transition:opacity .12s ease, background .12s ease, color .12s ease;
+  }
+  .cat-option-wrap:hover .cat-del-btn{ opacity:1; }
+  .cat-del-btn:hover{ background:#F1DEDA; color:var(--danger); }
+  .cat-empty{
+    padding:18px 14px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+  .cat-add-new{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 16px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--sage-dark);
+    border-top:1px dashed var(--line);
+    cursor:pointer;
+    position:sticky;
+    bottom:0;
+    background:var(--paper);
+  }
+  .cat-add-new:hover{ background:var(--sage-pale); }
+
+  /* ---------- Confirmation modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(62,74,55,0.42);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:100;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .modal-card{
+    background:var(--paper);
+    border-radius:18px;
+    width:100%;
+    max-width:340px;
+    padding:24px 22px 20px;
+    transform:translateY(10px) scale(0.98);
+    transition:transform .18s ease;
+    box-shadow:0 30px 60px -20px rgba(62,74,55,0.5);
+  }
+  .modal-overlay.show .modal-card{ transform:translateY(0) scale(1); }
+  .modal-title{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    font-weight:500;
+    color:var(--ink);
+    margin:0 0 4px;
+  }
+  .modal-sub{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 18px;
+  }
+  .modal-summary{
+    background:var(--cream);
+    border:1px dashed var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:20px;
+  }
+  .modal-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 0;
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .modal-row b{ color:var(--ink); font-weight:600; }
+  .modal-row.amt-row{
+    border-top:1px solid var(--line);
+    margin-top:4px;
+    padding-top:10px;
+  }
+  .modal-row .amt-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:18px;
+    font-weight:600;
+    color:var(--sage-dark);
+  }
+  .modal-btns{
+    display:flex;
+    gap:10px;
+  }
+  .modal-btn{
+    flex:1;
+    padding:12px 0;
+    border-radius:11px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--cream);
+    color:var(--ink-soft);
+    transition:background .12s ease;
+    text-align:center;
+  }
+  .modal-btn:hover{ background:#EFEADA; }
+  .modal-btn.primary{
+    background:var(--sage-dark);
+    border-color:var(--sage-dark);
+    color:#fff;
+  }
+  .modal-btn.primary:hover{ background:var(--sage); }
+  .modal-btn.danger{
+    background:var(--danger);
+    border-color:var(--danger);
+    color:#fff;
+  }
+  .modal-btn.danger:hover{ background:#A3503F; }
+
+  /* amount input */
+  .amount-wrap{
+    display:flex;
+    align-items:center;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:0 16px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .amount-wrap:focus-within{
+    border-color:var(--sage);
+    box-shadow:0 0 0 3px var(--sage-pale);
+  }
+  .amount-wrap .rs-sign{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:20px;
+    color:var(--muted);
+    padding-right:8px;
+  }
+  .amount-wrap input{
+    border:none;
+    background:transparent;
+    outline:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:22px;
+    font-weight:500;
+    color:var(--ink);
+    padding:13px 0;
+    width:100%;
+  }
+  .amount-wrap input::placeholder{ color:#C7C2AC; }
+
+  /* text / date inputs */
+  input[type="text"], input[type="date"]{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--cream);
+    border-radius:12px;
+    padding:12px 14px;
+    font-family:'Inter', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input[type="text"]:focus, input[type="date"]:focus{
+    border-color:var(--sage);
+    box-shadow:0 0 0 3px var(--sage-pale);
+  }
+  input[type="date"]{ font-family:'IBM Plex Mono', monospace; font-size:13.5px; }
+
+  .row-two{ display:flex; gap:12px; }
+  .row-two .field{ flex:1; }
+
+  /* payment mode pills */
+  .pill-row{ display:flex; gap:8px; }
+  .pill{
+    flex:1;
+    text-align:center;
+    padding:9px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .pill.active{
+    background:var(--mustard-pale);
+    border-color:var(--mustard);
+    color:#7A5A17;
+  }
+
+  /* submit */
+  .submit-btn{
+    width:100%;
+    border:none;
+    background:var(--sage-dark);
+    color:#fff;
+    font-family:'Inter', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    padding:15px 0;
+    border-radius:12px;
+    cursor:pointer;
+    margin-top:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .submit-btn:hover{ background:var(--sage); }
+  .submit-btn:active{ transform:scale(0.99); }
+
+  .microcopy{
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    margin-top:12px;
+  }
+
+  /* today's entries */
+  .entries{
+    margin-top:22px;
+    border-top:1px dashed var(--line);
+    padding-top:16px;
+  }
+  .entries-title{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .entry-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:9px 0;
+    font-size:13.5px;
+    border-bottom:1px solid var(--line);
+    animation:slideIn .3s ease;
+  }
+  .entry-row:last-child{ border-bottom:none; }
+  .entry-left{ display:flex; align-items:center; gap:8px; color:var(--ink-soft); }
+  .entry-amt{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); }
+  .entry-empty{ font-size:13px; color:var(--muted); padding:6px 0 2px; }
+
+  @keyframes slideIn{
+    from{ opacity:0; transform:translateY(-6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .toast{
+    position:fixed;
+    bottom:26px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--cream);
+    padding:12px 20px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:500;
+    display:flex; align-items:center; gap:8px;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+  .toast .dot{ color:var(--mustard); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="tally">
+    <p class="tally-greeting">GOOD EVENING, AMIT</p>
+    <p class="tally-date" id="todayDate"></p>
+    <p class="tally-label">Today's spend</p>
+    <div class="tally-amount"><span class="rs">₹</span><span id="totalAmt">0</span></div>
+    <p class="tally-count">Logged <b id="countNum">0</b> expenses today &mdash; keep the streak going</p>
+    <div class="notch left"></div>
+    <div class="notch right"></div>
+  </div>
+
+  <div class="card">
+
+    <div class="field">
+      <label>Category</label>
+      <div class="cat-dropdown" id="catDropdown">
+        <div class="cat-trigger" id="catTrigger">
+          <div class="cat-trigger-left">
+            <span class="ic" id="catTriggerIcon">🍽️</span>
+            <span class="name" id="catTriggerName">Food</span>
+          </div>
+          <svg class="cat-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="cat-panel" id="catPanel">
+          <div class="cat-search-wrap">
+            <input type="text" id="catSearch" placeholder="Search category…">
+          </div>
+          <div id="catOptions"></div>
+          <div class="cat-add-new" id="catAddNew">
+            <span>+</span> Add new category
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Amount</label>
+      <div class="amount-wrap">
+        <span class="rs-sign">₹</span>
+        <input type="text" inputmode="decimal" id="amountInput" placeholder="0.00">
+      </div>
+    </div>
+
+    <div class="row-two">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field">
+        <label>Logged by</label>
+        <div class="pill-row" id="nameRow">
+          <div class="pill active" data-name="Amit">Amit</div>
+          <div class="pill" data-name="Anita">Anita</div>
+          <div class="pill" data-name="Other">Other</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Invested on</label>
+      <input type="text" id="noteInput" placeholder="e.g. Lunch with team">
+    </div>
+
+    <button class="submit-btn" id="submitBtn">
+      🌿 Add to sheet
+    </button>
+    <p class="microcopy">Syncs straight to your Google Sheet</p>
+
+    <div class="entries">
+      <p class="entries-title">Today's entries</p>
+      <div id="entriesList">
+        <p class="entry-empty">Nothing logged yet — your first entry starts the tally above.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot">●</span> <span id="toastText">Added to your sheet</span></div>
+
+<!-- Submit confirmation modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-card">
+    <p class="modal-title">Confirm entry</p>
+    <p class="modal-sub">Double-check before it's added to your sheet.</p>
+    <div class="modal-summary">
+      <div class="modal-row"><span>Category</span><b id="confCat">—</b></div>
+      <div class="modal-row"><span>Date</span><b id="confDate">—</b></div>
+      <div class="modal-row"><span>Logged by</span><b id="confName">—</b></div>
+      <div class="modal-row"><span>Invested on</span><b id="confNote">—</b></div>
+      <div class="modal-row amt-row"><span>Amount</span><span class="amt-val" id="confAmt">₹0</span></div>
+    </div>
+    <div class="modal-btns">
+      <div class="modal-btn" id="confCancel">Cancel</div>
+      <div class="modal-btn primary" id="confAdd">🌿 Add to sheet</div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete category confirmation modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-card">
+    <p class="modal-title">Remove category?</p>
+    <p class="modal-sub" id="deleteSub">This won't affect entries you've already logged.</p>
+    <div class="modal-btns">
+      <div class="modal-btn" id="delCancel">Cancel</div>
+      <div class="modal-btn danger" id="delConfirm">Remove</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ----- date -----
+  const dateEl = document.getElementById('todayDate');
+  const dateInput = document.getElementById('dateInput');
+  const now = new Date();
+  dateEl.textContent = now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+  dateInput.value = now.toISOString().split('T')[0];
+
+  // ----- payment pills -----
+  let activeName = 'Amit';
+  document.getElementById('nameRow').addEventListener('click', (e)=>{
+    const pill = e.target.closest('.pill');
+    if(!pill) return;
+    if(pill.dataset.name === 'Other'){
+      const custom = prompt('Who is logging this expense?');
+      if(!custom || !custom.trim()) return;
+      activeName = custom.trim();
+      pill.textContent = activeName;
+    } else {
+      activeName = pill.dataset.name;
+    }
+    document.querySelectorAll('#nameRow .pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+  });
+
+  // ----- category dropdown (scales to any number of categories) -----
+  let categories = [
+    { name:'Food', icon:'🍽️' },
+    { name:'Transport', icon:'🚌' },
+    { name:'Shopping', icon:'🛍️' },
+    { name:'Bills', icon:'💡' },
+    { name:'Health', icon:'❤️' },
+    { name:'Entertainment', icon:'🎬' },
+    { name:'Groceries', icon:'🧺' },
+    { name:'Education', icon:'📚' },
+    { name:'Travel', icon:'✈️' },
+    { name:'Rent', icon:'🏠' },
+    { name:'Other', icon:'✨' },
+  ];
+  let activeCategory = categories[0].name;
+  const catIcons = Object.fromEntries(categories.map(c => [c.name, c.icon]));
+
+  const catTrigger = document.getElementById('catTrigger');
+  const catPanel = document.getElementById('catPanel');
+  const catOptions = document.getElementById('catOptions');
+  const catSearch = document.getElementById('catSearch');
+  const catTriggerIcon = document.getElementById('catTriggerIcon');
+  const catTriggerName = document.getElementById('catTriggerName');
+
+  function renderCatOptions(filter=''){
+    const q = filter.trim().toLowerCase();
+    const filtered = categories.filter(c => c.name.toLowerCase().includes(q));
+    catOptions.innerHTML = '';
+    if(filtered.length === 0){
+      catOptions.innerHTML = '<div class="cat-empty">No matching category</div>';
+      return;
+    }
+    filtered.forEach(c => {
+      const wrap = document.createElement('div');
+      wrap.className = 'cat-option-wrap';
+
+      const opt = document.createElement('div');
+      opt.className = 'cat-option' + (c.name === activeCategory ? ' selected' : '');
+      opt.innerHTML = `<span class="ic">${c.icon}</span><span class="oname">${c.name}</span><span class="check">✓</span>`;
+      opt.addEventListener('click', () => {
+        activeCategory = c.name;
+        catTriggerIcon.textContent = c.icon;
+        catTriggerName.textContent = c.name;
+        closeCatPanel();
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'cat-del-btn';
+      delBtn.title = `Remove ${c.name}`;
+      delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        askDeleteCategory(c.name);
+      });
+
+      wrap.appendChild(opt);
+      wrap.appendChild(delBtn);
+      catOptions.appendChild(wrap);
+    });
+  }
+
+  // ----- delete category flow -----
+  const deleteModal = document.getElementById('deleteModal');
+  const deleteSub = document.getElementById('deleteSub');
+  let pendingDeleteCat = null;
+
+  function askDeleteCategory(name){
+    if(categories.length <= 1){
+      showToast("You need at least one category");
+      return;
+    }
+    pendingDeleteCat = name;
+    deleteSub.textContent = `Remove "${name}" from your category list? This won't affect entries you've already logged.`;
+    deleteModal.classList.add('show');
+  }
+  document.getElementById('delCancel').addEventListener('click', () => {
+    pendingDeleteCat = null;
+    deleteModal.classList.remove('show');
+  });
+  document.getElementById('delConfirm').addEventListener('click', () => {
+    if(pendingDeleteCat){
+      categories = categories.filter(c => c.name !== pendingDeleteCat);
+      if(activeCategory === pendingDeleteCat){
+        activeCategory = categories[0].name;
+        catTriggerIcon.textContent = categories[0].icon;
+        catTriggerName.textContent = categories[0].name;
+      }
+      renderCatOptions(catSearch.value);
+      showToast(`Removed "${pendingDeleteCat}"`);
+    }
+    pendingDeleteCat = null;
+    deleteModal.classList.remove('show');
+  });
+
+  function openCatPanel(){
+    catTrigger.classList.add('open');
+    catPanel.classList.add('open');
+    catSearch.value = '';
+    renderCatOptions();
+    setTimeout(()=> catSearch.focus(), 50);
+  }
+  function closeCatPanel(){
+    catTrigger.classList.remove('open');
+    catPanel.classList.remove('open');
+  }
+
+  catTrigger.addEventListener('click', () => {
+    catPanel.classList.contains('open') ? closeCatPanel() : openCatPanel();
+  });
+  catSearch.addEventListener('input', (e) => renderCatOptions(e.target.value));
+  catSearch.addEventListener('click', (e) => e.stopPropagation());
+
+  document.getElementById('catAddNew').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const name = prompt('Name the new category:');
+    if(!name || !name.trim()) return;
+    const clean = name.trim();
+    if(!categories.find(c => c.name.toLowerCase() === clean.toLowerCase())){
+      categories.push({ name: clean, icon: '🏷️' });
+      catIcons[clean] = '🏷️';
+    }
+    activeCategory = clean;
+    catTriggerIcon.textContent = '🏷️';
+    catTriggerName.textContent = clean;
+    closeCatPanel();
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!document.getElementById('catDropdown').contains(e.target)) closeCatPanel();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){
+      closeCatPanel();
+      document.getElementById('confirmModal').classList.remove('show');
+      deleteModal.classList.remove('show');
+    }
+  });
+
+  [document.getElementById('confirmModal'), deleteModal].forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if(e.target === overlay) overlay.classList.remove('show');
+    });
+  });
+
+  // ----- Google Sheets connection -----
+  // Paste the Web App URL you get after deploying the Apps Script (see apps-script.gs) here:
+  const SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+  let total = 0;
+  let count = 0;
+  const totalEl = document.getElementById('totalAmt');
+  const countEl = document.getElementById('countNum');
+  const entriesList = document.getElementById('entriesList');
+  const amountInput = document.getElementById('amountInput');
+  const noteInput = document.getElementById('noteInput');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+
+  function showToast(msg){
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2200);
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const val = parseFloat(amountInput.value);
+    if(!val || val <= 0){
+      amountInput.focus();
+      showToast('Enter an amount first');
+      return;
+    }
+    // populate confirmation summary
+    document.getElementById('confCat').textContent = `${catIcons[activeCategory] || '🏷️'} ${activeCategory}`;
+    document.getElementById('confDate').textContent = new Date(dateInput.value).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+    document.getElementById('confName').textContent = activeName;
+    document.getElementById('confNote').textContent = noteInput.value.trim() || '—';
+    document.getElementById('confAmt').textContent = '₹' + val.toLocaleString('en-IN', {maximumFractionDigits:2});
+
+    document.getElementById('confirmModal').classList.add('show');
+  });
+
+  document.getElementById('confCancel').addEventListener('click', () => {
+    document.getElementById('confirmModal').classList.remove('show');
+  });
+
+  document.getElementById('confAdd').addEventListener('click', async () => {
+    const val = parseFloat(amountInput.value);
+    const dateObj = new Date(dateInput.value + 'T00:00:00');
+    const payload = {
+      month: dateObj.toLocaleDateString('en-IN', { month:'long' }),
+      date: dateInput.value,
+      day: dateObj.toLocaleDateString('en-IN', { weekday:'long' }),
+      mainCategory: activeCategory,
+      investedOn: noteInput.value.trim(),
+      expenditure: val,
+      name: activeName
+    };
+
+    const confAddBtn = document.getElementById('confAdd');
+    const originalLabel = confAddBtn.textContent;
+    confAddBtn.textContent = 'Adding…';
+    confAddBtn.style.pointerEvents = 'none';
+
+    try{
+      if(SCRIPT_URL.startsWith('PASTE_')){
+        throw new Error('not-configured');
+      }
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Apps Script web apps don't return CORS headers by default
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      // 'no-cors' means we can't read the response — treat the request completing as success
+      onEntryAdded(val);
+      showToast('Added to your sheet');
+    } catch(err){
+      if(err.message === 'not-configured'){
+        // No Apps Script URL set yet — fall back to local-only demo so the UI still works
+        onEntryAdded(val);
+        showToast('Saved locally — connect Apps Script to sync');
+      } else {
+        showToast('Could not reach the sheet — try again');
+      }
+    } finally {
+      confAddBtn.textContent = originalLabel;
+      confAddBtn.style.pointerEvents = 'auto';
+    }
+  });
+
+  function onEntryAdded(val){
+    total += val;
+    count += 1;
+    totalEl.textContent = total.toLocaleString('en-IN', {maximumFractionDigits:2});
+    countEl.textContent = count;
+
+    if(count === 1){ entriesList.innerHTML = ''; }
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `
+      <div class="entry-left">${catIcons[activeCategory] || '🏷️'} ${activeCategory}${noteInput.value ? ' · ' + noteInput.value : ''}</div>
+      <div class="entry-amt">₹${val.toLocaleString('en-IN', {maximumFractionDigits:2})}</div>
+    `;
+    entriesList.prepend(row);
+
+    document.getElementById('confirmModal').classList.remove('show');
+    amountInput.value = '';
+    noteInput.value = '';
+    amountInput.focus();
+  }
+
+  amountInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('submitBtn').click();
+  });
+</script>
+
+</body>
+</html>
