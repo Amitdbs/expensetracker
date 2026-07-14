@@ -552,6 +552,55 @@
   @media (prefers-reduced-motion: reduce){
     *{ animation:none !important; transition:none !important; }
   }
+
+  /* ---------- Mobile responsiveness ---------- */
+  @media (hover: none){
+    /* touch devices have no hover state — keep delete buttons visibly tappable */
+    .cat-del-btn{ opacity:0.5; }
+    .cat-del-btn:active{ opacity:1; background:#F1DEDA; color:var(--danger); }
+  }
+
+  @media (max-width: 480px){
+    body{ padding:28px 14px 60px; }
+    .page{ max-width:100%; }
+
+    .tally{ padding:22px 18px 18px; border-radius:16px 16px 4px 4px; }
+    .tally-amount{ font-size:34px; }
+    .tally-amount .rs{ font-size:20px; }
+    .tally-greeting{ font-size:12px; }
+
+    .card{ padding:20px 16px 24px; border-radius:4px 4px 16px 16px; }
+
+    /* stack Date + Logged-by instead of squeezing them side by side */
+    .row-two{ flex-direction:column; gap:0; }
+    .row-two .field{ width:100%; }
+
+    /* let payment/name pills wrap instead of shrinking or overflowing */
+    .pill-row{ flex-wrap:wrap; }
+    .pill{ flex:1 1 auto; min-width:80px; padding:10px 8px; }
+
+    /* category dropdown: full width, comfortably tappable */
+    .cat-trigger{ padding:12px; }
+    .cat-trigger-left .ic{ width:32px; height:32px; }
+    .cat-panel{ max-height:min(60vh, 300px); }
+    .cat-option{ padding:11px 8px; }
+    .cat-del-btn{ width:32px; height:32px; }
+
+    .amount-wrap input{ font-size:20px; }
+
+    .modal-card{ padding:22px 18px 18px; max-width:100%; }
+    .modal-btns{ gap:8px; }
+    .modal-btn{ font-size:13.5px; padding:12px 6px; }
+
+    .toast{ left:14px; right:14px; transform:translateY(20px); width:calc(100% - 28px); justify-content:center; }
+    .toast.show{ transform:translateY(0); }
+  }
+
+  @media (max-width: 360px){
+    .tally-amount{ font-size:29px; }
+    .pill{ font-size:12px; min-width:70px; }
+    .cat-trigger-left .name{ font-size:13.5px; }
+  }
 </style>
 </head>
 <body>
@@ -559,7 +608,7 @@
 <div class="page">
 
   <div class="tally">
-    <p class="tally-greeting">GOOD EVENING</p>
+    <p class="tally-greeting">GOOD EVENING, AMIT</p>
     <p class="tally-date" id="todayDate"></p>
     <p class="tally-label">Today's spend</p>
     <div class="tally-amount"><span class="rs">₹</span><span id="totalAmt">0</span></div>
@@ -839,7 +888,7 @@
 
   // ----- Google Sheets connection -----
   // Paste the Web App URL you get after deploying the Apps Script (see apps-script.gs) here:
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLsWXi2Fj0cKrS6vaN8_tnS39DwI1QVf8YJVgiVVdVicITrvBuomJ4RtVAV-KDnr6RKA/exec';
+  const SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
   let total = 0;
   let count = 0;
