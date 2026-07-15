@@ -197,12 +197,16 @@
     box-shadow:0 20px 44px -18px rgba(62,74,55,0.4);
     max-height:0;
     opacity:0;
+    visibility:hidden;
+    pointer-events:none;
     overflow:hidden;
-    transition:max-height .2s ease, opacity .15s ease;
+    transition:max-height .2s ease, opacity .15s ease, visibility .2s;
   }
   .cat-panel.open{
     max-height:300px;
     opacity:1;
+    visibility:visible;
+    pointer-events:auto;
     overflow-y:auto;
   }
   .cat-search-wrap{
