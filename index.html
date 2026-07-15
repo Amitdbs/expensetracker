@@ -24,6 +24,15 @@
 
   *{box-sizing:border-box;}
 
+  html{
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+
+  input, button, .chip, .pill, .cat-trigger, .cat-option, .modal-btn{
+    touch-action:manipulation;
+  }
+
   body{
     margin:0;
     min-height:100vh;
@@ -209,7 +218,7 @@
     background:var(--cream);
     border-radius:9px;
     padding:8px 10px;
-    font-size:13px;
+    font-size:16px;
     font-family:'Inter', sans-serif;
     outline:none;
     color:var(--ink);
@@ -431,7 +440,7 @@
     border-radius:12px;
     padding:12px 14px;
     font-family:'Inter', sans-serif;
-    font-size:14.5px;
+    font-size:16px;
     color:var(--ink);
     outline:none;
     transition:border-color .15s ease, box-shadow .15s ease;
@@ -440,7 +449,7 @@
     border-color:var(--sage);
     box-shadow:0 0 0 3px var(--sage-pale);
   }
-  input[type="date"]{ font-family:'IBM Plex Mono', monospace; font-size:13.5px; }
+  input[type="date"]{ font-family:'IBM Plex Mono', monospace; font-size:16px; }
 
   .row-two{ display:flex; gap:12px; }
   .row-two .field{ flex:1; }
